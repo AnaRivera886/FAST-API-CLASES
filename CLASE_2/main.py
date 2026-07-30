@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from routers import productos, categorias
+from routers import productos, categorias, clientes, ventas
  
 app = FastAPI(title="API de la Tienda")
  
@@ -9,4 +9,6 @@ def inicio():
 
 app.include_router(productos.router)
 app.include_router(categorias.router)
+app.include_router(clientes.router)
+app.include_router(ventas.router)
  
