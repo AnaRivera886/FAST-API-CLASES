@@ -1,13 +1,14 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
- 
+import seguridad
+
 router = APIRouter(prefix="/productos", tags=["Productos"])
- 
+
 class ProductoEntrada(BaseModel):
     nombre: str
     precio: float
     categoria: str
- 
+
 
 productos = [
     {"id": 1, "nombre": "Teclado mecanico", "precio": 120000, "categoria": "Perifericos"},
@@ -19,24 +20,24 @@ productos = [
 @router.get("")
 def listar_productos():
     return productos
- 
+
 @router.get("/{producto_id}")
 def obtener_producto(producto_id: int):
     for producto in productos:
         if producto["id"] == producto_id:
             return producto
     raise HTTPException(status_code=404, detail="Producto no encontrado")
- 
+
 @router.post("", status_code=201)
-def crear_producto(datos: ProductoEntrada):
+def crear_producto(datos: ProductoEntrada, usuario: dict = Depends(seguridad.obtener_usuario_actual)):
     nuevo_id = max((p["id"] for p in productos), default=0) + 1
     nuevo = {"id": nuevo_id, "nombre": datos.nombre,
-             "precio": datos.precio, "categoria": datos.categoria}
+            "precio": datos.precio, "categoria": datos.categoria}
     productos.append(nuevo)
-    return {"mensaje": "Producto creado", "producto": nuevo}
- 
+    return {"mensaje": "Producto creado", "producto": nuevo, "creado_por": usuario["username"]}
+
 @router.put("/{producto_id}")
-def actualizar_producto(producto_id: int, datos: ProductoEntrada):
+def actualizar_producto(producto_id: int, datos: ProductoEntrada, usuario: dict = Depends(seguridad.obtener_usuario_actual)):
     for producto in productos:
         if producto["id"] == producto_id:
             producto["nombre"] = datos.nombre
@@ -46,7 +47,7 @@ def actualizar_producto(producto_id: int, datos: ProductoEntrada):
     raise HTTPException(status_code=404, detail="Producto no encontrado")
  
 @router.delete("/{producto_id}")
-def eliminar_producto(producto_id: int):
+def eliminar_producto(producto_id: int, admin: dict = Depends(seguridad.requerir_admin)):
     for producto in productos:
         if producto["id"] == producto_id:
             productos.remove(producto)
