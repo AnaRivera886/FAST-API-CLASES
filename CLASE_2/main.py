@@ -1,11 +1,28 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
+from database import crear_tablas, sembrar_datos
 from routers import productos, categorias, clientes, ventas, auth
- 
-app = FastAPI(title="API de la Tienda")
- 
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Crear las tablas y cargar los datos iniciales
+    crear_tablas()
+    sembrar_datos()
+
+    yield
+
+
+app = FastAPI(
+    title="API de la Tienda",
+    lifespan=lifespan
+)
+
+
 @app.get("/", tags=["Inicio"])
 def inicio():
-	return {"mensaje": "API de la Tienda funcionando. Visita /docs"}
+    return {"mensaje": "API de la Tienda funcionando. Visita /docs"}
+
 
 app.include_router(productos.router)
 app.include_router(categorias.router)
